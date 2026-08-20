@@ -69,6 +69,8 @@ async function authenticate(apiKey?: string) {
   return rows[0].user_id;
 }
 
+const OVERLAY_SECRET = "gklfduatslaknbvcx0pr48982";
+
 async function auth(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const bearer = req.header("authorization")?.replace(/^Bearer\s+/i, "");
@@ -248,6 +250,33 @@ io.on("connection", async (socket) => {
   });
   socket.on("ping", () => socket.emit("pong"));
   socket.on("disconnect", () => clearTimeout(loginTimeout));
+});
+
+// 오버레이 소켓: 회원가입 없이 고정 시크릿 + 구독할 스트리머 배열로 바로 연결
+const overlaySubscribeRequestSchema = z.object({
+  secret: z.string().min(1),
+  streamers: overlaySubscribeSchema,
+});
+
+overlayNs.on("connection", (socket) => {
+  const authTimeout = setTimeout(() => {
+    if (!socket.data.authenticated) socket.disconnect(true);
+  }, 10_000);
+
+  socket.on("subscribe", async (payload: unknown) => {
+    try {
+      const input = overlaySubscribeRequestSchema.parse(payload);
+      if (input.secret !== OVERLAY_SECRET) return socket.emit("subscribe_error", { error: "invalid_secret" });
+
+      socket.data.authenticated = true;
+      clearTimeout(authTimeout);
+      await socket.join(input.streamers.map((item) => room(item.platform, item.id)));
+      socket.emit("subscribed", { streamers: input.streamers });
+    } catch {
+      socket.emit("subscribe_error", { error: "invalid_request" });
+    }
+  });
+  socket.on("disconnect", () => clearTimeout(authTimeout));
 });
 
 if (process.env.REDIS_URL) {
