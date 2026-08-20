@@ -79,43 +79,8 @@ type Endpoint = {
 
 const endpoints: Endpoint[] = [
   {
-    method: "POST", path: "/auth/signup", auth: "없음",
-    request: `{ "name": "string(2~100자)", "email": "string", "password": "string(8~72자)" }`,
-    response: `201 { accessToken, apiKey, user: { id, name, email } }\n409 { "error": "email_already_exists" }`,
-  },
-  {
-    method: "POST", path: "/auth/login", auth: "없음",
-    request: `{ "email": "string", "password": "string" }`,
-    response: `200 { accessToken, user: { id, name, email } }\n401 { "error": "invalid_email_or_password" }`,
-  },
-  {
-    method: "GET", path: "/api/v1/me", auth: "Bearer JWT 또는 API Key",
-    request: "(없음)",
-    response: `200 { user: { id, name, email } }`,
-  },
-  {
-    method: "GET", path: "/api/v1/api-keys", auth: "Bearer JWT 또는 API Key",
-    request: "(없음)",
-    response: `200 { result: [{ id, key_prefix, active, last_used_at, created_at }] }`,
-  },
-  {
-    method: "GET", path: "/api/v1/streamers", auth: "Bearer JWT 또는 API Key",
-    request: "(없음)",
-    response: `200 { result: [{ platform, streamer_id }] }`,
-  },
-  {
-    method: "POST", path: "/api/v1/streamers", auth: "Bearer JWT 또는 API Key",
-    request: `{ "platform": "soop" | "chzzk", "streamerId": "string(1~100자)" }`,
-    response: `201 { platform, streamerId }`,
-  },
-  {
-    method: "DELETE", path: "/api/v1/streamers/:platform/:streamerId", auth: "Bearer JWT 또는 API Key",
-    request: "Path Parameters: platform, streamerId",
-    response: `204 (본문 없음)`,
-  },
-  {
     method: "GET", path: "/donations/polling", auth: "Bearer(API Key)",
-    request: "Query: cursor?(string), limit?(≤100, 기본 50)",
+    request: "Query: cursor?(string), limit?(≤100, 기본 50), platform?(soop|chzzk), streamerId?(string)\n계정 등록 여부와 무관하게 donations 테이블 전체에서 조회합니다. platform/streamerId 생략 시 전체, 함께 입력하면 해당 스트리머만(둘 중 하나만 입력하면 400).",
     response: `200 { error: 0, currentCursor, nextCursor, result: [...], length }`,
   },
 ];
@@ -179,7 +144,7 @@ export default function SocketGuide() {
       <pre><code>{overlayCode}</code></pre>
 
       <div className="title"><h2>REST 폴링 예시</h2></div>
-      <p className="muted">GET /donations/polling — cursor 미입력 시 최신 데이터부터 반환합니다.</p>
+      <p className="muted">GET /donations/polling — cursor 미입력 시 최신 데이터부터 반환합니다. 스트리머 연결(등록) 여부와 무관하게 donations 테이블 전체를 조회하며, platform·streamerId를 함께 넘기면 특정 스트리머만 필터링됩니다. 스트리머 연결은 Socket.IO 실시간 수신 대상 지정 전용입니다.</p>
       <pre><code>{pollingCode}</code></pre>
     </section>
   );

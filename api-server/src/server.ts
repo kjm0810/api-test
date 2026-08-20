@@ -203,14 +203,22 @@ app.delete("/api/v1/streamers/:platform/:streamerId", auth, async (req: AuthRequ
 app.get("/donations/polling", auth, async (req: AuthRequest, res) => {
   const limit = Math.min(100, Math.max(1, Number(req.query.limit ?? 50)));
   const cursor = typeof req.query.cursor === "string" ? req.query.cursor : null;
-  const params: unknown[] = [req.userId];
+  const platform = typeof req.query.platform === "string" ? req.query.platform : null;
+  const streamerId = typeof req.query.streamerId === "string" ? req.query.streamerId : null;
+  if ((platform && !streamerId) || (!platform && streamerId))
+    return res.status(400).json({ error: "platform과 streamerId는 함께 입력해야 합니다" });
+  if (platform && platform !== "soop" && platform !== "chzzk")
+    return res.status(400).json({ error: "invalid_platform" });
+
+  const params: unknown[] = [];
+  let filterSql = "";
+  if (platform && streamerId) { filterSql = "AND d.platform=? AND d.streamer_id=?"; params.push(platform, streamerId); }
   let cursorSql = "";
   if (cursor) { cursorSql = "AND (d.created_at,d._id) < (SELECT created_at,_id FROM donations WHERE _id=?)"; params.push(cursor); }
   params.push(limit);
   const [rows] = await pool.query<RowDataPacket[]>(`
-    SELECT d.* FROM donations d JOIN streamer_links sl
-      ON sl.user_id=? AND sl.platform=d.platform AND sl.streamer_id=d.streamer_id
-    WHERE 1=1 ${cursorSql} ORDER BY d.created_at DESC,d._id DESC LIMIT ?`, params);
+    SELECT d.* FROM donations d
+    WHERE 1=1 ${filterSql} ${cursorSql} ORDER BY d.created_at DESC,d._id DESC LIMIT ?`, params);
   res.json({
     error: 0,
     currentCursor: cursor,
