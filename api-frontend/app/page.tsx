@@ -10,7 +10,7 @@ function decodeEvent<T>(payload: ArrayBuffer): T {
   return JSON.parse(new TextDecoder().decode(bytes)) as T;
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://5.104.82.219:3000";
 type Platform = "soop" | "chzzk";
 type Streamer = { platform: Platform; streamer_id: string };
 type Donation = { _id?: string; id?: string; platform: Platform; streamer_id?: string; streamerId?: string; nickname: string; amount: number; message: string; created_at?: string; createdAt?: string };

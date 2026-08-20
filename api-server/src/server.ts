@@ -14,7 +14,7 @@ import { z } from "zod";
 
 const port = Number(process.env.PORT ?? 3000);
 const pool = mysql.createPool({
-  host: process.env.DB_HOST ?? "localhost",
+  host: process.env.DB_HOST ?? "5.104.82.219",
   port: Number(process.env.DB_PORT ?? 3306),
   database: process.env.DB_NAME ?? "test",
   user: process.env.DB_USER ?? "root",
@@ -266,4 +266,4 @@ app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   res.status(error instanceof z.ZodError ? 400 : 500).json({ error: error instanceof Error ? error.message : "server_error" });
 });
 
-server.listen(port, () => console.log(`REST + Socket.IO listening on http://localhost:${port}`));
+server.listen(port, () => console.log(`REST + Socket.IO listening on http://5.104.82.219:${port}`));

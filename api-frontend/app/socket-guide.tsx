@@ -5,7 +5,7 @@ import { useState } from "react";
 const code = `const io = require("socket.io-client");
 const { uncompressSync } = require("snappy");
 
-const socket = io("http://localhost:3000", {
+const socket = io("http://5.104.82.219:3000", {
   transports: ["websocket"],
   timeout: 5000,
 });
@@ -27,7 +27,7 @@ socket.on("donation", (payload) => console.log("후원", decode(payload)));
 socket.on("login_error", console.error);
 socket.on("connect_error", console.error);`;
 
-const pollingCode = `curl "http://localhost:3000/donations/polling?limit=50" \\
+const pollingCode = `curl "http://5.104.82.219:3000/donations/polling?limit=50" \\
   -H "Authorization: Bearer YOUR_API_KEY"
 
 // 응답
@@ -57,7 +57,7 @@ export default function SocketGuide() {
       <p className="muted">API 키 계정에 등록된 스트리머의 이벤트만 수신합니다. handshake가 아닌 접속 후 login 이벤트로 인증하며, chat·donation 이벤트는 Snappy로 압축되어 전달됩니다.</p>
       <div className="guide-steps">
         <code>npm install socket.io-client snappy</code>
-        <code>Socket 서버: http://localhost:3000</code>
+        <code>Socket 서버: http://5.104.82.219:3000</code>
       </div>
       <pre><code>{code}</code></pre>
       <div className="schema-grid">

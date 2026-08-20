@@ -75,7 +75,7 @@ services:
     build:
       context: ./api-frontend
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3000
+        NEXT_PUBLIC_API_URL: http://5.104.82.219:3000
     restart: unless-stopped
     ports:
       - "3001:3001"
