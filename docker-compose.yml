@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: stream_api
-      MYSQL_ROOT_PASSWORD: change-me
+      MYSQL_ROOT_PASSWORD: Rlawjdals135
     ports:
       - "3307:3306"
     volumes:
@@ -12,7 +12,7 @@ services:
       - ./batch-program/collect-socket/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-donations.sql:ro
       - ./api-server/schema.sql:/docker-entrypoint-initdb.d/02-api.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pchange-me"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pRlawjdals135"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -37,7 +37,7 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/stream_api?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
       DB_USERNAME: root
-      DB_PASSWORD: change-me
+      DB_PASSWORD: Rlawjdals135
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
@@ -57,11 +57,11 @@ services:
       DB_PORT: 3306
       DB_NAME: stream_api
       DB_USER: root
-      DB_PASSWORD: change-me
+      DB_PASSWORD: Rlawjdals135
       REDIS_URL: redis://redis:6379
-      ADMIN_SECRET: change-admin-secret
-      INTERNAL_SECRET: change-internal-secret
-      JWT_SECRET: change-this-jwt-secret-before-production
+      ADMIN_SECRET: f2c590c3bc020800eca4ebeff370654ab78a6f95a465ccc6
+      INTERNAL_SECRET: 4e2c01878a4e4e969700a76ee81766e606be4260be0c1d8e
+      JWT_SECRET: 47c119787fcad2559d6a446d39e9a4fa5424f15b340f7ee73427da00c27237b9
       CORS_ORIGIN: "*"
     ports:
       - "3000:3000"
