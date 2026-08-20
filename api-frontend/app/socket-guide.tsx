@@ -131,12 +131,12 @@ export default function SocketGuide() {
       </div>
 
       <div className="title">
-        <div><p className="eyebrow">OVERLAY SOCKET.IO GUIDE</p><h2>오버레이(OBS)용 연결</h2></div>
+        <div><p className="eyebrow">OVERLAY SOCKET.IO GUIDE</p><h2>오버레이 프로그램용 연결</h2></div>
         <button type="button" className="secondary" onClick={() => copy("overlay", overlayCode)}>{copied === "overlay" ? "복사됨" : "코드 복사"}</button>
       </div>
       <p className="muted">
         회원가입 없이, 고정된 오버레이 시크릿 하나로 <code>/overlay</code> 네임스페이스에 연결합니다.
-        연결 후 10초 안에 <code>subscribe</code> 이벤트로 시크릿과 구독할 스트리머 배열을 같이 보내야 합니다.
+        연결 후 10초 안에 <code>subscribe</code> 이벤트로 시크릿과 구독할 스트리머 배열을 같이 보내야 합니다. (현재는 시크릿키 "gklfduatslaknbvcx0pr48982" 고정값입니다.)
       </p>
       <div className="guide-steps">
         <code>Socket 서버: http://5.104.82.219:3000/overlay</code>
