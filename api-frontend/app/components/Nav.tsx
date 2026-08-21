@@ -8,7 +8,7 @@ export default function Nav() {
   return (
     <nav className="nav-links">
       <Link href="/" className={pathname === "/" ? "active" : ""}>콘솔</Link>
-      <Link href="/overlays" className={pathname === "/overlays" ? "active" : ""}>오버레이</Link>
+      <Link href="/overlay-setting" className={pathname.includes("/overlay-setting") ? "active" : ""}>오버레이</Link>
     </nav>
   );
 }

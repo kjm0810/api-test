@@ -4,25 +4,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import AuthGate from "./components/AuthGate";
 import Nav from "./components/Nav";
+import { copyToClipboard } from "./lib/clipboard";
 import { decodeEvent } from "./lib/decode";
 import { API, useAuth } from "./lib/useAuth";
 import SocketGuide from "./socket-guide";
-
-async function copyToClipboard(text: string) {
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
-  document.execCommand("copy");
-  document.body.removeChild(textarea);
-}
 
 type Platform = "soop" | "chzzk";
 type Streamer = { platform: Platform; streamer_id: string };

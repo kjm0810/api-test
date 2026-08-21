@@ -15,17 +15,17 @@ body.overlay-mode{background:transparent}
 .overlay-alert-image{width:36px;height:36px;object-fit:contain}
 @keyframes overlay-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-.theme-heart .overlay-card.donation{border-color:#8a2a52;background:#2a0b1aee}
-.theme-heart .overlay-card.donation::before{content:"💗";margin-right:2px}
-.theme-star .overlay-card.donation{border-color:#8a6a1f;background:#2a230bee}
-.theme-star .overlay-card.donation::before{content:"⭐";margin-right:2px}
-.theme-neon .overlay-card.donation{border-color:#2ad4ff;background:#05141aee;box-shadow:0 0 18px #2ad4ff55}
-
 .overlay-game{display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px}
 .overlay-roulette{font-size:64px;transition:transform .2s}
 .overlay-roulette.spinning{animation:overlay-spin 2.5s ease-out}
 @keyframes overlay-spin{from{transform:rotate(0deg)}to{transform:rotate(1080deg)}}
 .overlay-game-winner{font-size:18px;font-weight:800;color:#f0f3ff;text-shadow:0 2px 8px #000a}
+
+.widget-links{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.widget-link-card{display:block;padding:16px;border:1px solid #343652;border-radius:14px;background:#141527;text-decoration:none;color:inherit;transition:border-color .15s}
+.widget-link-card:hover{border-color:#7c6cff}
+.widget-link-card h3{margin:0 0 6px;color:#54d9ff}
+@media(max-width:760px){.widget-links{grid-template-columns:1fr}}
 
 .overlay-panel{margin-top:18px}.overlay-create{margin-top:10px}
 .overlay-row{border-top:1px solid #343652;padding:14px 2px;display:flex;flex-direction:column;gap:10px}
