@@ -17,3 +17,26 @@ CREATE TABLE IF NOT EXISTS donations (
     INDEX idx_donations_created (created_at),
     INDEX idx_donations_ttl (ttl)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS missions (
+    _id CHAR(36) NOT NULL,
+    platform VARCHAR(20) NOT NULL,
+    streamer_id VARCHAR(100) NOT NULL,
+    mission_key VARCHAR(100) NOT NULL DEFAULT '',
+    mission_type VARCHAR(50) NOT NULL,
+    mission_phase ENUM('receive','settle','result') NOT NULL,
+    title VARCHAR(255) NOT NULL DEFAULT '',
+    user_id VARCHAR(100) NOT NULL DEFAULT '',
+    nickname VARCHAR(100) NOT NULL DEFAULT '',
+    cnt INT NOT NULL DEFAULT 0,
+    amount BIGINT NOT NULL DEFAULT 0,
+    extras JSON NOT NULL,
+    created_at DATETIME(3) NOT NULL,
+    ttl DATETIME(3) NOT NULL,
+    `__v` INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (_id),
+    INDEX idx_missions_streamer_created (streamer_id, created_at),
+    INDEX idx_missions_key (mission_key),
+    INDEX idx_missions_created (created_at),
+    INDEX idx_missions_ttl (ttl)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

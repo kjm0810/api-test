@@ -289,6 +289,47 @@ app.get("/donations/polling", auth, async (req: AuthRequest, res) => {
     length: rows.length,
   });
 });
+
+app.get("/missions/polling", auth, async (req: AuthRequest, res) => {
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit ?? 50)));
+  const cursor = typeof req.query.cursor === "string" ? req.query.cursor : null;
+  const platform = typeof req.query.platform === "string" ? req.query.platform : null;
+  const streamerId = typeof req.query.streamer_id === "string" ? req.query.streamer_id : null;
+  const missionType = typeof req.query.mission_type === "string" ? req.query.mission_type : null;
+  const phase = typeof req.query.phase === "string" ? req.query.phase : null;
+  const missionKey = typeof req.query.key === "string" ? req.query.key : null;
+
+  if (platform && platform !== "soop" && platform !== "chzzk")
+    return res.status(400).json({ error: "invalid_platform" });
+  if (phase && !["receive", "settle", "result"].includes(phase))
+    return res.status(400).json({ error: "invalid_phase" });
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (platform) { conditions.push("platform=?"); params.push(platform); }
+  if (streamerId) { conditions.push("streamer_id=?"); params.push(streamerId); }
+  if (missionKey) { conditions.push("mission_key=?"); params.push(missionKey); }
+  if (missionType) { conditions.push("mission_type=?"); params.push(missionType); }
+  else if (phase) { conditions.push("mission_phase=?"); params.push(phase); }
+  if (cursor) { conditions.push("(created_at,_id) < (SELECT created_at,_id FROM missions WHERE _id=?)"); params.push(cursor); }
+
+  const filterSql = conditions.length ? `AND ${conditions.join(" AND ")}` : "";
+  params.push(limit);
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT * FROM missions WHERE 1=1 ${filterSql} ORDER BY created_at DESC,_id DESC LIMIT ?`, params);
+
+  res.json({
+    error: 0,
+    currentCursor: cursor,
+    nextCursor: rows.length === limit ? (rows.at(-1)?._id ?? null) : null,
+    result: rows,
+    length: rows.length,
+    applied_filters: {
+      platform, streamer_id: streamerId, key: missionKey,
+      mission_type: missionType, phase: missionType ? null : phase,
+    },
+  });
+});
 // --------------- 외부에 제공할 API-----------------
 // --------------- 외부에 제공할 API-----------------
 // --------------- 외부에 제공할 API-----------------

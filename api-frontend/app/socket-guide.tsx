@@ -83,6 +83,11 @@ const endpoints: Endpoint[] = [
     request: "Query: cursor?(string), limit?(≤100, 기본 50), platform?(soop|chzzk), streamerId?(string)\n계정 등록 여부와 무관하게 donations 테이블 전체에서 조회합니다. platform/streamerId 생략 시 전체, 함께 입력하면 해당 스트리머만(둘 중 하나만 입력하면 400).",
     response: `200 { error: 0, currentCursor, nextCursor, result: [...], length }`,
   },
+  {
+    method: "GET", path: "/missions/polling", auth: "Bearer(API Key)",
+    request: "Query: cursor?, limit?(≤100, 기본 50), phase?(receive|settle|result), mission_type?(원본 값, phase보다 우선), platform?(soop|chzzk), streamer_id?, key?(mission_key)\nSOOP 도전미션·대결미션 / 치지직 MISSION·MISSION_PARTICIPATION 이벤트를 동일 스키마로 반환. 현재 SOOP은 receive/settle/result 모두, 치지직은 receive만 수집됩니다(정산 집계는 추후 지원).",
+    response: `200 { error: 0, currentCursor, nextCursor, result: [...], length, applied_filters }`,
+  },
 ];
 
 export default function SocketGuide() {

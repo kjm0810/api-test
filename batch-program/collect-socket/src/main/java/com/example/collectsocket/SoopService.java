@@ -73,6 +73,7 @@ public class SoopService {
     private final AtomicLong donations = new AtomicLong();
     private final ConcurrentLinkedDeque<Donation> donationEvents = new ConcurrentLinkedDeque<>();
     private final LinkedBlockingQueue<DonationRow> saveQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<MissionRow> missionSaveQueue = new LinkedBlockingQueue<>();
     private volatile List<Broadcast> broadcasts = List.of();
     private volatile List<ChzzkBroadcast> chzzkBroadcasts = List.of();
     private volatile Instant lastSyncAt;
@@ -187,6 +188,39 @@ public class SoopService {
                     });
         } catch (Exception ignored) {
             saveQueue.addAll(batch);
+            failures.incrementAndGet();
+        }
+    }
+
+    @Scheduled(fixedDelay = 1_000)
+    void saveMissions() {
+        List<MissionRow> batch = new ArrayList<>(1000);
+        missionSaveQueue.drainTo(batch, 1000);
+        if (batch.isEmpty()) return;
+        try {
+            jdbc.batchUpdate("""
+                    INSERT INTO missions
+                    (_id, platform, streamer_id, mission_key, mission_type, mission_phase, title, user_id, nickname, cnt, amount, extras, created_at, ttl, `__v`)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, batch, 1000, (statement, row) -> {
+                        statement.setString(1, row.id());
+                        statement.setString(2, row.platform());
+                        statement.setString(3, row.streamerId());
+                        statement.setString(4, row.missionKey());
+                        statement.setString(5, row.missionType());
+                        statement.setString(6, row.missionPhase());
+                        statement.setString(7, row.title());
+                        statement.setString(8, row.userId());
+                        statement.setString(9, row.nickname());
+                        statement.setInt(10, row.cnt());
+                        statement.setLong(11, row.amount());
+                        statement.setString(12, row.extras());
+                        statement.setTimestamp(13, java.sql.Timestamp.from(row.createdAt()));
+                        statement.setTimestamp(14, java.sql.Timestamp.from(row.ttl()));
+                        statement.setInt(15, 0);
+                    });
+        } catch (Exception ignored) {
+            missionSaveQueue.addAll(batch);
             failures.incrementAndGet();
         }
     }
@@ -456,6 +490,37 @@ public class SoopService {
         };
     }
 
+    private void mission(String streamerId, String raw) {
+        int jsonStart = raw.indexOf('{');
+        if (jsonStart < 0) return;
+        try {
+            var root = json.readTree(raw.substring(jsonStart));
+            String action = root.path("action").asText();
+            String phase = soopMissionPhase(action);
+            if (phase == null) return;
+            var message = root.path("message");
+            String userId = message.path("userId").asText("");
+            String nickname = message.path("userNickname").asText("");
+            int cnt = message.path("count").asInt(0);
+            String title = message.path("title").asText("");
+            Instant receivedAt = Instant.now();
+            missionSaveQueue.offer(new MissionRow(UUID.randomUUID().toString(), "soop", streamerId, "",
+                    action, phase, title, userId, nickname, cnt, 0L,
+                    json.writeValueAsString(Map.of("soop", root)), receivedAt,
+                    receivedAt.plus(365, ChronoUnit.DAYS)));
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static String soopMissionPhase(String action) {
+        return switch (action) {
+            case "BATTLE_MISSION_GIFTED", "CHALLENGE_MISSION_GIFTED", "CHALLENGE_MISSION_SPONSORS" -> "receive";
+            case "BATTLE_MISSION_SETTLED", "CHALLENGE_MISSION_SETTLED" -> "settle";
+            case "BATTLE_MISSION_FINISHED", "CHALLENGE_MISSION_FINISHED" -> "result";
+            default -> null;
+        };
+    }
+
     private void chat(String streamerId, String raw) {
         String[] values = raw.split(SEP, -1);
         Instant receivedAt = Instant.now();
@@ -518,6 +583,9 @@ public class SoopService {
     private record DonationRow(String id, String platform, String streamerId, String message,
             String userId, String nickname, int count, long amount, String extras,
             Instant createdAt, Instant ttl) {}
+    private record MissionRow(String id, String platform, String streamerId, String missionKey,
+            String missionType, String missionPhase, String title, String userId, String nickname,
+            int cnt, long amount, String extras, Instant createdAt, Instant ttl) {}
 
     private final class ChatSocket implements WebSocket.Listener {
         private final String streamerId;
@@ -564,6 +632,7 @@ public class SoopService {
             if ("0001".equals(type)) ws.sendText(packet("0002", SEP + chatNo + SEP.repeat(5)), true);
             else if ("0005".equals(type)) chat(streamerId, raw);
             else if ("0018".equals(type) || "0105".equals(type) || "0087".equals(type)) donation(streamerId, type, raw);
+            else if ("0121".equals(type)) mission(streamerId, raw);
         }
         void ping() { if (socket != null && !socket.isOutputClosed()) socket.sendText(packet("0000", SEP), true); }
         void close() {
@@ -668,6 +737,15 @@ public class SoopService {
                     if (type != 10) continue;
                     long amount = extras.path("payAmount").asLong();
                     String donationType = extras.path("donationType").asText();
+                    if ("MISSION".equals(donationType) || "MISSION_PARTICIPATION".equals(donationType)) {
+                        Instant receivedAt = Instant.now();
+                        missionSaveQueue.offer(new MissionRow(UUID.randomUUID().toString(), "chzzk",
+                                broadcast.channelId(), "", donationType, "receive", "", userId, nickname,
+                                (int) Math.min(amount, Integer.MAX_VALUE), amount,
+                                json.writeValueAsString(Map.of("chzzk", extras)), receivedAt,
+                                receivedAt.plus(365, ChronoUnit.DAYS)));
+                        continue;
+                    }
                     String from = nickname + (userId.isBlank() ? "" : "(" + userId + ")");
                     String to = broadcast.channelName() + "(" + broadcast.channelId() + ")";
                     donationEvents.addFirst(new Donation(Instant.now(), "CHZZK", from, to,
