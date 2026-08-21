@@ -198,12 +198,16 @@ app.delete("/api/v1/streamers/:platform/:streamerId", auth, async (req: AuthRequ
 // 유저 <-> 스트리머 연결에 대한 요청
 
 // 계정당 오버레이 1개 (설정 1벌 + 오버레이 전용 연결 스트리머 목록)
-type OverlayConfigRow = RowDataPacket & { user_id: number; token: string; settings: string };
+type OverlayConfigRow = RowDataPacket & { user_id: number; token: string; settings: unknown };
 const overlaySettingsSchema = z.record(z.string(), z.unknown());
+
+function parseSettings(value: unknown): unknown {
+  return typeof value === "string" ? JSON.parse(value) : value;
+}
 
 async function getOrCreateOverlayConfig(userId: number): Promise<{ token: string; settings: unknown }> {
   const [rows] = await pool.query<OverlayConfigRow[]>("SELECT token,settings FROM overlay_configs WHERE user_id=?", [userId]);
-  if (rows[0]) return { token: rows[0].token, settings: JSON.parse(rows[0].settings) };
+  if (rows[0]) return { token: rows[0].token, settings: parseSettings(rows[0].settings) };
   const token = randomBytes(16).toString("hex");
   await pool.execute("INSERT INTO overlay_configs(user_id,token,settings) VALUES(?,?,?)", [userId, token, JSON.stringify({})]);
   return { token, settings: {} };
@@ -246,7 +250,7 @@ app.get("/overlay/:token", async (req, res) => {
   const config = rows[0];
   if (!config) return res.status(404).json({ error: "not_found" });
   const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [config.user_id]);
-  res.json({ settings: JSON.parse(config.settings), streamers });
+  res.json({ settings: parseSettings(config.settings), streamers });
 });
 
 // --------------- 외부에 제공할 API-----------------
@@ -349,7 +353,7 @@ overlayNs.on("connection", (socket) => {
       socket.data.authenticated = true;
       clearTimeout(authTimeout);
       await socket.join(streamers.map((item) => room(item.platform, item.streamer_id)));
-      socket.emit("joined", { streamers, settings: JSON.parse(config.settings) });
+      socket.emit("joined", { streamers, settings: parseSettings(config.settings) });
     } catch {
       socket.emit("join_error", { error: "invalid_request" });
     }
