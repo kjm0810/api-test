@@ -197,32 +197,37 @@ app.delete("/api/v1/streamers/:platform/:streamerId", auth, async (req: AuthRequ
 });
 // 유저 <-> 스트리머 연결에 대한 요청
 
-// 계정당 오버레이 1개 (설정 1벌 + 오버레이 전용 연결 스트리머 목록)
-type OverlayConfigRow = RowDataPacket & { user_id: number; token: string; settings: unknown };
+// 계정당 오버레이 카테고리 고정 3개 (후원 알림/채팅/게임) + 오버레이 전용 연결 스트리머 목록(계정 공용)
+type OverlayWidgetType = "donation" | "chat" | "game";
+const OVERLAY_WIDGET_TYPES: OverlayWidgetType[] = ["donation", "chat", "game"];
+type OverlayWidgetRow = RowDataPacket & { user_id: number; type: OverlayWidgetType; token: string; settings: unknown };
 const overlaySettingsSchema = z.record(z.string(), z.unknown());
 
 function parseSettings(value: unknown): unknown {
   return typeof value === "string" ? JSON.parse(value) : value;
 }
 
-async function getOrCreateOverlayConfig(userId: number): Promise<{ token: string; settings: unknown }> {
-  const [rows] = await pool.query<OverlayConfigRow[]>("SELECT token,settings FROM overlay_configs WHERE user_id=?", [userId]);
-  if (rows[0]) return { token: rows[0].token, settings: parseSettings(rows[0].settings) };
+async function getOrCreateWidget(userId: number, type: OverlayWidgetType): Promise<{ type: OverlayWidgetType; token: string; settings: unknown }> {
+  const [rows] = await pool.query<OverlayWidgetRow[]>(
+    "SELECT type,token,settings FROM overlay_widgets WHERE user_id=? AND type=?", [userId, type]);
+  if (rows[0]) return { type, token: rows[0].token, settings: parseSettings(rows[0].settings) };
   const token = randomBytes(16).toString("hex");
-  await pool.execute("INSERT INTO overlay_configs(user_id,token,settings) VALUES(?,?,?)", [userId, token, JSON.stringify({})]);
-  return { token, settings: {} };
+  await pool.execute("INSERT INTO overlay_widgets(user_id,type,token,settings) VALUES(?,?,?,?)",
+    [userId, type, token, JSON.stringify({})]);
+  return { type, token, settings: {} };
 }
 
-app.get("/api/v1/overlay", auth, async (req: AuthRequest, res) => {
-  const config = await getOrCreateOverlayConfig(req.userId!);
-  const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [req.userId]);
-  res.json({ token: config.token, settings: config.settings, streamers });
+app.get("/api/v1/overlay/widgets", auth, async (req: AuthRequest, res) => {
+  const result = await Promise.all(OVERLAY_WIDGET_TYPES.map((type) => getOrCreateWidget(req.userId!, type)));
+  res.json({ result });
 });
 
-app.patch("/api/v1/overlay", auth, async (req: AuthRequest, res) => {
+app.patch("/api/v1/overlay/widgets/:type", auth, async (req: AuthRequest, res) => {
+  const type = z.enum(["donation", "chat", "game"]).parse(req.params.type);
   const input = z.object({ settings: overlaySettingsSchema }).parse(req.body);
-  await getOrCreateOverlayConfig(req.userId!);
-  await pool.execute("UPDATE overlay_configs SET settings=? WHERE user_id=?", [JSON.stringify(input.settings), req.userId!]);
+  await getOrCreateWidget(req.userId!, type);
+  await pool.execute("UPDATE overlay_widgets SET settings=? WHERE user_id=? AND type=?",
+    [JSON.stringify(input.settings), req.userId!, type]);
   res.json({ ok: true });
 });
 
@@ -244,13 +249,14 @@ app.delete("/api/v1/overlay/streamers/:platform/:streamerId", auth, async (req: 
   res.status(204).end();
 });
 
-// OBS 전용 조회: 로그인 없이 토큰만으로 설정 + 구독 스트리머 조회
+// OBS 전용 조회: 로그인 없이 위젯 토큰만으로 종류/설정/구독 스트리머 조회
 app.get("/overlay/:token", async (req, res) => {
-  const [rows] = await pool.query<OverlayConfigRow[]>("SELECT user_id,settings FROM overlay_configs WHERE token=?", [req.params.token]);
-  const config = rows[0];
-  if (!config) return res.status(404).json({ error: "not_found" });
-  const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [config.user_id]);
-  res.json({ settings: parseSettings(config.settings), streamers });
+  const [rows] = await pool.query<OverlayWidgetRow[]>(
+    "SELECT user_id,type,settings FROM overlay_widgets WHERE token=?", [req.params.token]);
+  const widget = rows[0];
+  if (!widget) return res.status(404).json({ error: "not_found" });
+  const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [widget.user_id]);
+  res.json({ type: widget.type, settings: parseSettings(widget.settings), streamers });
 });
 
 // --------------- 외부에 제공할 API-----------------
@@ -345,15 +351,15 @@ overlayNs.on("connection", (socket) => {
   socket.on("join", async (payload: unknown) => {
     try {
       const token = z.string().min(1).parse(payload);
-      const [rows] = await pool.query<OverlayConfigRow[]>("SELECT user_id,settings FROM overlay_configs WHERE token=?", [token]);
-      const config = rows[0];
-      if (!config) return socket.emit("join_error", { error: "overlay_not_found" });
-      const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [config.user_id]);
+      const [rows] = await pool.query<OverlayWidgetRow[]>("SELECT user_id,type,settings FROM overlay_widgets WHERE token=?", [token]);
+      const widget = rows[0];
+      if (!widget) return socket.emit("join_error", { error: "overlay_not_found" });
+      const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [widget.user_id]);
 
       socket.data.authenticated = true;
       clearTimeout(authTimeout);
       await socket.join(streamers.map((item) => room(item.platform, item.streamer_id)));
-      socket.emit("joined", { streamers, settings: parseSettings(config.settings) });
+      socket.emit("joined", { type: widget.type, streamers, settings: parseSettings(widget.settings) });
     } catch {
       socket.emit("join_error", { error: "invalid_request" });
     }

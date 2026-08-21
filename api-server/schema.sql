@@ -29,14 +29,16 @@ CREATE TABLE IF NOT EXISTS streamer_links (
   CONSTRAINT fk_streamer_links_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- 계정당 오버레이 1개(설정 1벌). 토큰이 로그인 없이 OBS 페이지가 접근하는 유일한 열쇠.
-CREATE TABLE IF NOT EXISTS overlay_configs (
-  user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+-- 계정당 오버레이 카테고리 고정 3개(후원 알림/채팅/게임). 카테고리마다 별도 토큰 = 별도 OBS URL.
+CREATE TABLE IF NOT EXISTS overlay_widgets (
+  user_id BIGINT UNSIGNED NOT NULL,
+  type ENUM('donation','chat','game') NOT NULL,
   token CHAR(32) NOT NULL UNIQUE,
   settings JSON NOT NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  CONSTRAINT fk_overlay_configs_user FOREIGN KEY (user_id) REFERENCES users(id)
+  PRIMARY KEY (user_id, type),
+  CONSTRAINT fk_overlay_widgets_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 오버레이 전용 연결 스트리머 (streamer_links와 별개, 계정당 여러 개)

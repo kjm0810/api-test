@@ -21,6 +21,12 @@ body.overlay-mode{background:transparent}
 .theme-star .overlay-card.donation::before{content:"⭐";margin-right:2px}
 .theme-neon .overlay-card.donation{border-color:#2ad4ff;background:#05141aee;box-shadow:0 0 18px #2ad4ff55}
 
+.overlay-game{display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px}
+.overlay-roulette{font-size:64px;transition:transform .2s}
+.overlay-roulette.spinning{animation:overlay-spin 2.5s ease-out}
+@keyframes overlay-spin{from{transform:rotate(0deg)}to{transform:rotate(1080deg)}}
+.overlay-game-winner{font-size:18px;font-weight:800;color:#f0f3ff;text-shadow:0 2px 8px #000a}
+
 .overlay-panel{margin-top:18px}.overlay-create{margin-top:10px}
 .overlay-row{border-top:1px solid #343652;padding:14px 2px;display:flex;flex-direction:column;gap:10px}
 .overlay-row-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}

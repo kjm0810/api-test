@@ -85,3 +85,25 @@ export function isDonationTypeEnabled(settings: OverlaySettings, event: { platfo
   if (!key) return true;
   return settings.donationTypes[key];
 }
+
+export type WidgetType = "donation" | "chat" | "game";
+
+export const WIDGET_TYPE_LABELS: Record<WidgetType, string> = {
+  donation: "후원 알림", chat: "채팅", game: "게임",
+};
+
+export type ChatSettings = { theme: string; maxMessages: number };
+
+export const DEFAULT_CHAT_SETTINGS: ChatSettings = { theme: "basic", maxMessages: 30 };
+
+export function normalizeChatSettings(input: Partial<ChatSettings> | undefined | null): ChatSettings {
+  return { ...DEFAULT_CHAT_SETTINGS, ...input };
+}
+
+export type GameSettings = { gameType: "roulette"; triggerMinCnt: number };
+
+export const DEFAULT_GAME_SETTINGS: GameSettings = { gameType: "roulette", triggerMinCnt: 1 };
+
+export function normalizeGameSettings(input: Partial<GameSettings> | undefined | null): GameSettings {
+  return { ...DEFAULT_GAME_SETTINGS, ...input };
+}
