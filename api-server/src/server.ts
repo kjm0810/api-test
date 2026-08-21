@@ -197,90 +197,56 @@ app.delete("/api/v1/streamers/:platform/:streamerId", auth, async (req: AuthRequ
 });
 // 유저 <-> 스트리머 연결에 대한 요청
 
-// 계정별 OBS 오버레이 (토큰 하나 = 오버레이 하나, 스트리머 여러 개 구독 가능)
-type OverlayRow = RowDataPacket & {
-  id: number; token: string; settings: string; created_at: string; updated_at: string;
-  platform: "soop" | "chzzk" | null; streamer_id: string | null;
-};
-const overlayStreamersSchema = z.array(z.object({
-  platform: z.enum(["soop", "chzzk"]), streamerId: z.string().min(1).max(100),
-})).min(1).max(20);
+// 계정당 오버레이 1개 (설정 1벌 + 오버레이 전용 연결 스트리머 목록)
+type OverlayConfigRow = RowDataPacket & { user_id: number; token: string; settings: string };
 const overlaySettingsSchema = z.record(z.string(), z.unknown());
 
-function groupOverlayRows(rows: OverlayRow[]) {
-  const map = new Map<number, { id: number; token: string; settings: unknown; streamers: { platform: string; streamerId: string }[]; createdAt: string; updatedAt: string }>();
-  for (const row of rows) {
-    if (!map.has(row.id)) {
-      map.set(row.id, {
-        id: row.id, token: row.token,
-        settings: typeof row.settings === "string" ? JSON.parse(row.settings) : row.settings,
-        streamers: [], createdAt: row.created_at, updatedAt: row.updated_at,
-      });
-    }
-    if (row.platform && row.streamer_id) map.get(row.id)!.streamers.push({ platform: row.platform, streamerId: row.streamer_id });
-  }
-  return [...map.values()];
+async function getOrCreateOverlayConfig(userId: number): Promise<{ token: string; settings: unknown }> {
+  const [rows] = await pool.query<OverlayConfigRow[]>("SELECT token,settings FROM overlay_configs WHERE user_id=?", [userId]);
+  if (rows[0]) return { token: rows[0].token, settings: JSON.parse(rows[0].settings) };
+  const token = randomBytes(16).toString("hex");
+  await pool.execute("INSERT INTO overlay_configs(user_id,token,settings) VALUES(?,?,?)", [userId, token, JSON.stringify({})]);
+  return { token, settings: {} };
 }
 
-app.get("/api/v1/overlays", auth, async (req: AuthRequest, res) => {
-  const [rows] = await pool.query<OverlayRow[]>(`
-    SELECT o.id, o.token, o.settings, o.created_at, o.updated_at, os.platform, os.streamer_id
-    FROM overlays o LEFT JOIN overlay_streamers os ON os.overlay_id = o.id
-    WHERE o.user_id = ? ORDER BY o.id DESC`, [req.userId]);
-  res.json({ result: groupOverlayRows(rows) });
+app.get("/api/v1/overlay", auth, async (req: AuthRequest, res) => {
+  const config = await getOrCreateOverlayConfig(req.userId!);
+  const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [req.userId]);
+  res.json({ token: config.token, settings: config.settings, streamers });
 });
 
-app.post("/api/v1/overlays", auth, async (req: AuthRequest, res) => {
-  const input = z.object({ streamers: overlayStreamersSchema, settings: overlaySettingsSchema.default({}) }).parse(req.body);
-  const token = randomBytes(16).toString("hex");
-  const connection = await pool.getConnection();
-  try {
-    await connection.beginTransaction();
-    const [result] = await connection.execute<ResultSetHeader>(
-      "INSERT INTO overlays(user_id,token,settings) VALUES(?,?,?)", [req.userId!, token, JSON.stringify(input.settings)]);
-    for (const streamer of input.streamers) {
-      await connection.execute("INSERT IGNORE INTO overlay_streamers(overlay_id,platform,streamer_id) VALUES(?,?,?)",
-        [result.insertId, streamer.platform, streamer.streamerId]);
-    }
-    await connection.commit();
-    res.status(201).json({ id: result.insertId, token, streamers: input.streamers, settings: input.settings });
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally { connection.release(); }
-});
-
-app.patch("/api/v1/overlays/:id", auth, async (req: AuthRequest, res) => {
-  const input = z.object({ streamers: overlayStreamersSchema.optional(), settings: overlaySettingsSchema.optional() }).parse(req.body);
-  const [existing] = await pool.query<RowDataPacket[]>("SELECT id FROM overlays WHERE id=? AND user_id=?", [req.params.id, req.userId]);
-  if (!existing[0]) return res.status(404).json({ error: "not_found" });
-
-  if (input.settings) await pool.execute("UPDATE overlays SET settings=? WHERE id=?", [JSON.stringify(input.settings), req.params.id]);
-  if (input.streamers) {
-    await pool.execute("DELETE FROM overlay_streamers WHERE overlay_id=?", [req.params.id]);
-    for (const streamer of input.streamers) {
-      await pool.execute("INSERT IGNORE INTO overlay_streamers(overlay_id,platform,streamer_id) VALUES(?,?,?)",
-        [req.params.id, streamer.platform, streamer.streamerId]);
-    }
-  }
+app.patch("/api/v1/overlay", auth, async (req: AuthRequest, res) => {
+  const input = z.object({ settings: overlaySettingsSchema }).parse(req.body);
+  await getOrCreateOverlayConfig(req.userId!);
+  await pool.execute("UPDATE overlay_configs SET settings=? WHERE user_id=?", [JSON.stringify(input.settings), req.userId!]);
   res.json({ ok: true });
 });
 
-app.delete("/api/v1/overlays/:id", auth, async (req: AuthRequest, res) => {
-  const [result] = await pool.execute<ResultSetHeader>("DELETE FROM overlays WHERE id=? AND user_id=?", [req.params.id, req.userId!]);
-  if (result.affectedRows === 0) return res.status(404).json({ error: "not_found" });
+app.get("/api/v1/overlay/streamers", auth, async (req: AuthRequest, res) => {
+  const [rows] = await pool.query("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [req.userId]);
+  res.json({ result: rows });
+});
+
+app.post("/api/v1/overlay/streamers", auth, async (req: AuthRequest, res) => {
+  const input = z.object({ platform: z.enum(["soop", "chzzk"]), streamerId: z.string().min(1).max(100) }).parse(req.body);
+  await pool.execute("INSERT IGNORE INTO overlay_streamers(user_id,platform,streamer_id) VALUES(?,?,?)",
+    [req.userId!, input.platform, input.streamerId]);
+  res.status(201).json(input);
+});
+
+app.delete("/api/v1/overlay/streamers/:platform/:streamerId", auth, async (req: AuthRequest, res) => {
+  await pool.execute("DELETE FROM overlay_streamers WHERE user_id=? AND platform=? AND streamer_id=?",
+    [req.userId!, req.params.platform, req.params.streamerId]);
   res.status(204).end();
 });
 
 // OBS 전용 조회: 로그인 없이 토큰만으로 설정 + 구독 스트리머 조회
 app.get("/overlay/:token", async (req, res) => {
-  const [rows] = await pool.query<OverlayRow[]>(`
-    SELECT o.id, o.token, o.settings, o.created_at, o.updated_at, os.platform, os.streamer_id
-    FROM overlays o LEFT JOIN overlay_streamers os ON os.overlay_id = o.id
-    WHERE o.token = ?`, [req.params.token]);
-  const overlay = groupOverlayRows(rows)[0];
-  if (!overlay) return res.status(404).json({ error: "not_found" });
-  res.json({ settings: overlay.settings, streamers: overlay.streamers });
+  const [rows] = await pool.query<OverlayConfigRow[]>("SELECT user_id,settings FROM overlay_configs WHERE token=?", [req.params.token]);
+  const config = rows[0];
+  if (!config) return res.status(404).json({ error: "not_found" });
+  const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [config.user_id]);
+  res.json({ settings: JSON.parse(config.settings), streamers });
 });
 
 // --------------- 외부에 제공할 API-----------------
@@ -375,17 +341,15 @@ overlayNs.on("connection", (socket) => {
   socket.on("join", async (payload: unknown) => {
     try {
       const token = z.string().min(1).parse(payload);
-      const [rows] = await pool.query<OverlayRow[]>(`
-        SELECT o.id, o.token, o.settings, o.created_at, o.updated_at, os.platform, os.streamer_id
-        FROM overlays o LEFT JOIN overlay_streamers os ON os.overlay_id = o.id
-        WHERE o.token = ?`, [token]);
-      const overlay = groupOverlayRows(rows)[0];
-      if (!overlay) return socket.emit("join_error", { error: "overlay_not_found" });
+      const [rows] = await pool.query<OverlayConfigRow[]>("SELECT user_id,settings FROM overlay_configs WHERE token=?", [token]);
+      const config = rows[0];
+      if (!config) return socket.emit("join_error", { error: "overlay_not_found" });
+      const [streamers] = await pool.query<LinkRow[]>("SELECT platform,streamer_id FROM overlay_streamers WHERE user_id=?", [config.user_id]);
 
       socket.data.authenticated = true;
       clearTimeout(authTimeout);
-      await socket.join(overlay.streamers.map((item) => room(item.platform, item.streamerId)));
-      socket.emit("joined", { streamers: overlay.streamers, settings: overlay.settings });
+      await socket.join(streamers.map((item) => room(item.platform, item.streamer_id)));
+      socket.emit("joined", { streamers, settings: JSON.parse(config.settings) });
     } catch {
       socket.emit("join_error", { error: "invalid_request" });
     }

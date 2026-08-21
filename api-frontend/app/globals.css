@@ -12,10 +12,25 @@ body.overlay-mode{background:transparent}
 .overlay-feed{display:flex;flex-direction:column-reverse;gap:8px;max-width:520px}
 .overlay-card{display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:12px;background:#141527ee;border:1px solid #343652;box-shadow:0 10px 30px #0007;animation:overlay-in .25s ease-out}
 .overlay-card.donation{border-color:#5a4a1f;background:#2a220bee}
+.overlay-alert-image{width:36px;height:36px;object-fit:contain}
 @keyframes overlay-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
+.theme-heart .overlay-card.donation{border-color:#8a2a52;background:#2a0b1aee}
+.theme-heart .overlay-card.donation::before{content:"💗";margin-right:2px}
+.theme-star .overlay-card.donation{border-color:#8a6a1f;background:#2a230bee}
+.theme-star .overlay-card.donation::before{content:"⭐";margin-right:2px}
+.theme-neon .overlay-card.donation{border-color:#2ad4ff;background:#05141aee;box-shadow:0 0 18px #2ad4ff55}
+
 .overlay-panel{margin-top:18px}.overlay-create{margin-top:10px}
-.overlay-row{border-top:1px solid #343652;padding:14px 2px;display:flex;flex-direction:column;gap:8px}
+.overlay-row{border-top:1px solid #343652;padding:14px 2px;display:flex;flex-direction:column;gap:10px}
 .overlay-row-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .overlay-row-url{display:flex;gap:8px}.overlay-row-url input{flex:1;font-size:12px;color:#9fb4d4}
-textarea.overlay-settings{width:100%;min-height:90px;font-family:ui-monospace,monospace;font-size:12px;resize:vertical}
+.overlay-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.overlay-settings-grid label,.overlay-default-text{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#939bb5}
+.checkbox-label{flex-direction:row!important;align-items:center;gap:6px!important}
+.overlay-donation-types{display:flex;flex-wrap:wrap;gap:12px;padding:10px;border:1px solid #26334a;border-radius:10px}
+.overlay-tiers{border:1px solid #26334a;border-radius:10px;padding:10px}
+.overlay-tiers .title{margin-bottom:8px}.overlay-tiers h3{margin:0;font-size:13px;color:#9fb4d4}
+.overlay-tier-row{display:grid;grid-template-columns:90px 20px 1fr 1.4fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px}
+.overlay-save{align-self:flex-start}
+@media(max-width:760px){.overlay-settings-grid{grid-template-columns:1fr}.overlay-tier-row{grid-template-columns:1fr}}
