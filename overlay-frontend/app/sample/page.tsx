@@ -13,6 +13,14 @@ const animationList: AnimationStyle[] = [
 const RESULTS = [1, 2, 3, 4, 5];
 const PLAY_DURATION_MS = 10000;
 
+// crypto.randomUUID()는 보안 컨텍스트(HTTPS/localhost)에서만 지원되므로 HTTP 배포 환경을 위한 폴백
+function generateId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export default function SamplePage() {
     const [nowPlay, setNowPlay] = useState<QueueItem | null>(null);
     const [playQueue, setPlayQueue] = useState<QueueItem[]>([]);
@@ -36,7 +44,7 @@ export default function SamplePage() {
 
     const sendDonation = () => {
         setPlayQueue((queue) => [...queue, {
-            id: crypto.randomUUID(),
+            id: generateId(),
             animation: selectStyle,
         }]);
     };
