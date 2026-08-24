@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import AuthGate from "./components/AuthGate";
-import Nav from "./components/Nav";
 import { copyToClipboard } from "./lib/clipboard";
 import { decodeEvent } from "./lib/decode";
 import { API, useAuth } from "./lib/useAuth";
@@ -66,7 +65,7 @@ export default function Home() {
       <main>
         <header>
           <div><p className="eyebrow">STREAM EVENT API</p><h1>SOOP · 치지직 통합 콘솔</h1><p className="muted">스트리머 연결과 실시간 후원 이벤트를 한곳에서 관리합니다.</p></div>
-          <div className="header-actions"><Nav /><span className={`status ${socketState === "연결됨" ? "online" : ""}`}>{socketState}</span><button className="secondary" onClick={logout}>로그아웃</button></div>
+          <div className="header-actions"><span className={`status ${socketState === "연결됨" ? "online" : ""}`}>{socketState}</span><button className="secondary" onClick={logout}>로그아웃</button></div>
         </header>
         <section className="panel key"><label>API KEY</label><input type="text" value={apiKey} onChange={(e) => updateApiKey(e.target.value)} placeholder="회원가입 때 발급된 API 키" /><button onClick={() => void copyToClipboard(apiKey)} disabled={!apiKey}>복사</button></section>
         {error && <div className="error">{error}</div>}

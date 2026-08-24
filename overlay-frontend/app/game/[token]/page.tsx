@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { decodeEvent } from "../../../lib/decode";
-import { useOverlayJoin } from "../../../lib/useOverlayJoin";
+import { decodeEvent } from "../../lib/decode";
+import { useOverlayJoin } from "../../lib/useOverlayJoin";
 
 type StreamEvent = { _id: string; nickname: string; cnt?: number };
 

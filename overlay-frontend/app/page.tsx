@@ -2,17 +2,16 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import AuthGate from "../components/AuthGate";
-import Nav from "../components/Nav";
-import { useAuth } from "../lib/useAuth";
+import AuthGate from "./components/AuthGate";
+import { useAuth } from "./lib/useAuth";
 
 type Platform = "soop" | "chzzk";
 type Streamer = { platform: Platform; streamer_id: string };
 
-const WIDGET_LINKS: { href: string; title: string; description: string }[] = [
-  { href: "/overlay-setting/donation", title: "후원 알림", description: "테마·구간별 텍스트/이미지·TTS 설정" },
-  { href: "/overlay-setting/chat", title: "채팅", description: "실시간 채팅 표시 설정" },
-  { href: "/overlay-setting/game", title: "게임", description: "후원 계기 미니게임 설정 (룰렛)" },
+const WIDGET_LINKS: { href: string; icon: string; title: string; description: string }[] = [
+  { href: "/donation", icon: "💰", title: "후원 알림", description: "구간별 텍스트/이미지·TTS·폰트 크기 설정" },
+  { href: "/chat", icon: "💬", title: "채팅", description: "실시간 채팅 표시 설정" },
+  { href: "/game", icon: "🎮", title: "게임", description: "후원 계기 미니게임 설정 (룰렛)" },
 ];
 
 export default function OverlaysPage() {
@@ -51,7 +50,7 @@ export default function OverlaysPage() {
       <main>
         <header>
           <div><p className="eyebrow">STREAM EVENT API</p><h1>오버레이</h1><p className="muted">후원 알림·채팅·게임 3종류의 설정 페이지와 OBS 연결용 스트리머를 관리합니다.</p></div>
-          <div className="header-actions"><Nav /><button className="secondary" onClick={logout}>로그아웃</button></div>
+          <div className="header-actions"><button className="secondary" onClick={logout}>로그아웃</button></div>
         </header>
         {error && <div className="error">{error}</div>}
 
@@ -60,6 +59,7 @@ export default function OverlaysPage() {
           <div className="widget-links">
             {WIDGET_LINKS.map((item) => (
               <Link key={item.href} href={item.href} className="widget-link-card">
+                <span className="icon">{item.icon}</span>
                 <h3>{item.title}</h3>
                 <p className="muted">{item.description}</p>
               </Link>

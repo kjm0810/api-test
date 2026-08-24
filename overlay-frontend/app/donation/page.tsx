@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AuthGate from "../../components/AuthGate";
-import Nav from "../../components/Nav";
-import { copyToClipboard } from "../../lib/clipboard";
-import { useAuth } from "../../lib/useAuth";
+import AuthGate from "../components/AuthGate";
+import { copyToClipboard } from "../lib/clipboard";
+import { useAuth } from "../lib/useAuth";
 
 type DonationTier = { min: number; max: number | null; text: string; image: string };
 
@@ -63,14 +62,14 @@ export default function DonationOverlaySettingsPage() {
   const removeTier = (index: number) =>
     setSettings((current) => ({ ...current, tiers: current.tiers.filter((_, i) => i !== index) }));
 
-  const url = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/overlay/donation/${token}` : "";
+  const url = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/donation/${token}` : "";
 
   return (
     <AuthGate accessToken={accessToken} onAuth={setAuth}>
       <main>
         <header>
           <div><p className="eyebrow">STREAM EVENT API</p><h1>후원 알림 설정</h1><p className="muted">연결된 스트리머에게 후원이 오면 아래 설정대로 표시됩니다.</p></div>
-          <div className="header-actions"><Nav /><button className="secondary" onClick={logout}>로그아웃</button></div>
+          <div className="header-actions"><button className="secondary" onClick={logout}>로그아웃</button></div>
         </header>
         {error && <div className="error">{error}</div>}
 

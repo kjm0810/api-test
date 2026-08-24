@@ -4,39 +4,3 @@
 .endpoint-table{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}.endpoint-row{border:1px solid #26334a;border-radius:12px;padding:14px;background:#0b1220}.endpoint-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.endpoint-head code{color:#f0f3ff;font-weight:700}.method{font-size:11px;font-weight:900;padding:3px 8px;border-radius:6px;background:#292c47;color:#e5e8f7}.method.post{background:#123e48;color:#65dcf4}.method.get{background:#1c3a24;color:#7be495}.method.delete{background:#412332;color:#ff9eb7}.auth-badge{margin-left:auto;font-size:11px;color:#939bb5}.endpoint-body{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.endpoint-body pre{margin:4px 0 0;padding:10px;border:1px solid #26334a;border-radius:8px;background:#080d18;color:#c9d7ec;font-size:12px;line-height:1.5;overflow:auto;white-space:pre-wrap}.endpoint-body b{font-size:11px;color:#939bb5}@media(max-width:760px){.endpoint-body{grid-template-columns:1fr}}
 
 .nav-links{display:flex;gap:4px;border:1px solid #3d4160;border-radius:999px;padding:4px}.nav-links a{padding:7px 14px;border-radius:999px;color:#adb3ca;text-decoration:none;font-size:13px;font-weight:700}.nav-links a.active,.nav-links a:hover{background:#292c47;color:#f0f3ff}
-
-body.overlay-mode{background:transparent}
-.overlay-page{min-height:100vh;padding:16px;display:flex;flex-direction:column;gap:10px}
-.overlay-topbar{display:flex;justify-content:space-between;align-items:center}
-.overlay-topbar a{color:#54d9ff;font-size:13px;text-decoration:none}
-.overlay-feed{display:flex;flex-direction:column-reverse;gap:8px;max-width:520px}
-.overlay-card{display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:12px;background:#141527ee;border:1px solid #343652;box-shadow:0 10px 30px #0007;animation:overlay-in .25s ease-out}
-.overlay-card.donation{border-color:#5a4a1f;background:#2a220bee}
-.overlay-alert-image{width:36px;height:36px;object-fit:contain}
-@keyframes overlay-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
-.overlay-game{display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px}
-.overlay-roulette{font-size:64px;transition:transform .2s}
-.overlay-roulette.spinning{animation:overlay-spin 2.5s ease-out}
-@keyframes overlay-spin{from{transform:rotate(0deg)}to{transform:rotate(1080deg)}}
-.overlay-game-winner{font-size:18px;font-weight:800;color:#f0f3ff;text-shadow:0 2px 8px #000a}
-
-.widget-links{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.widget-link-card{display:block;padding:16px;border:1px solid #343652;border-radius:14px;background:#141527;text-decoration:none;color:inherit;transition:border-color .15s}
-.widget-link-card:hover{border-color:#7c6cff}
-.widget-link-card h3{margin:0 0 6px;color:#54d9ff}
-@media(max-width:760px){.widget-links{grid-template-columns:1fr}}
-
-.overlay-panel{margin-top:18px}.overlay-create{margin-top:10px}
-.overlay-row{border-top:1px solid #343652;padding:14px 2px;display:flex;flex-direction:column;gap:10px}
-.overlay-row-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.overlay-row-url{display:flex;gap:8px}.overlay-row-url input{flex:1;font-size:12px;color:#9fb4d4}
-.overlay-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.overlay-settings-grid label,.overlay-default-text{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#939bb5}
-.checkbox-label{flex-direction:row!important;align-items:center;gap:6px!important}
-.overlay-donation-types{display:flex;flex-wrap:wrap;gap:12px;padding:10px;border:1px solid #26334a;border-radius:10px}
-.overlay-tiers{border:1px solid #26334a;border-radius:10px;padding:10px}
-.overlay-tiers .title{margin-bottom:8px}.overlay-tiers h3{margin:0;font-size:13px;color:#9fb4d4}
-.overlay-tier-row{display:grid;grid-template-columns:90px 20px 1fr 1.4fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px}
-.overlay-save{align-self:flex-start}
-@media(max-width:760px){.overlay-settings-grid{grid-template-columns:1fr}.overlay-tier-row{grid-template-columns:1fr}}

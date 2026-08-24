@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AuthGate from "../../components/AuthGate";
-import Nav from "../../components/Nav";
-import { copyToClipboard } from "../../lib/clipboard";
-import { useAuth } from "../../lib/useAuth";
+import AuthGate from "../components/AuthGate";
+import { copyToClipboard } from "../lib/clipboard";
+import { useAuth } from "../lib/useAuth";
 
 type ChatSettings = { maxMessages: number; fontSize: number };
 
@@ -39,14 +38,14 @@ export default function ChatOverlaySettingsPage() {
     catch (e) { setError(e instanceof Error ? e.message : "설정 저장 실패"); }
   };
 
-  const url = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/overlay/chat/${token}` : "";
+  const url = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/chat/${token}` : "";
 
   return (
     <AuthGate accessToken={accessToken} onAuth={setAuth}>
       <main>
         <header>
           <div><p className="eyebrow">STREAM EVENT API</p><h1>채팅 오버레이 설정</h1><p className="muted">연결된 스트리머의 채팅을 실시간으로 표시합니다.</p></div>
-          <div className="header-actions"><Nav /><button className="secondary" onClick={logout}>로그아웃</button></div>
+          <div className="header-actions"><button className="secondary" onClick={logout}>로그아웃</button></div>
         </header>
         {error && <div className="error">{error}</div>}
 

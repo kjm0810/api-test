@@ -57,18 +57,6 @@ socket.on("donation", (payload) => console.log("후원", decode(payload)));
 socket.on("subscribe_error", console.error);
 socket.on("connect_error", console.error);`;
 
-const pollingCode = `curl "http://5.104.82.219:3000/donations/polling?limit=50" \\
-  -H "Authorization: Bearer YOUR_API_KEY"
-
-// 응답
-// {
-//   "error": 0,
-//   "currentCursor": null,
-//   "nextCursor": "6f2b...",
-//   "result": [ { "_id": "...", "platform": "soop", "amount": 1000, ... } ],
-//   "length": 50
-// }`;
-
 type Endpoint = {
   method: string;
   path: string;
@@ -148,9 +136,7 @@ export default function SocketGuide() {
       </div>
       <pre><code>{overlayCode}</code></pre>
 
-      <div className="title"><h2>REST 폴링 예시</h2></div>
-      <p className="muted">GET /donations/polling — cursor 미입력 시 최신 데이터부터 반환합니다. 스트리머 연결(등록) 여부와 무관하게 donations 테이블 전체를 조회하며, platform·streamerId를 함께 넘기면 특정 스트리머만 필터링됩니다. 스트리머 연결은 Socket.IO 실시간 수신 대상 지정 전용입니다.</p>
-      <pre><code>{pollingCode}</code></pre>
+     
     </section>
   );
 }

@@ -82,6 +82,17 @@ services:
     depends_on:
       - api-server
 
+  overlay-frontend:
+    build:
+      context: ./overlay-frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://5.104.82.219:3000
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    depends_on:
+      - api-server
+
 volumes:
   mysql-data:
   redis-data:
