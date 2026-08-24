@@ -492,12 +492,18 @@ public class SoopService {
 
     private void mission(String streamerId, String raw) {
         int jsonStart = raw.indexOf('{');
-        if (jsonStart < 0) return;
+        if (jsonStart < 0) {
+            log.info("SOOP 미션(0121) JSON 없음: streamerId={}, raw={}", streamerId, raw);
+            return;
+        }
         try {
             var root = json.readTree(raw.substring(jsonStart));
             String action = root.path("action").asText();
             String phase = soopMissionPhase(action);
-            if (phase == null) return;
+            if (phase == null) {
+                log.info("SOOP 미션(0121) 알 수 없는 action: streamerId={}, action={}, body={}", streamerId, action, root);
+                return;
+            }
             var message = root.path("message");
             String userId = message.path("userId").asText("");
             String nickname = message.path("userNickname").asText("");
@@ -739,8 +745,12 @@ public class SoopService {
                     String donationType = extras.path("donationType").asText();
                     if ("MISSION".equals(donationType) || "MISSION_PARTICIPATION".equals(donationType)) {
                         Instant receivedAt = Instant.now();
+                        String missionKey = "MISSION".equals(donationType)
+                                ? extras.path("missionDonationId").asText("")
+                                : extras.path("relatedMissionDonationId").asText("");
+                        String missionTitle = extras.path("missionText").asText("");
                         missionSaveQueue.offer(new MissionRow(UUID.randomUUID().toString(), "chzzk",
-                                broadcast.channelId(), "", donationType, "receive", "", userId, nickname,
+                                broadcast.channelId(), missionKey, donationType, "receive", missionTitle, userId, nickname,
                                 (int) Math.min(amount, Integer.MAX_VALUE), amount,
                                 json.writeValueAsString(Map.of("chzzk", extras)), receivedAt,
                                 receivedAt.plus(365, ChronoUnit.DAYS)));
