@@ -1,4 +1,4 @@
-:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui;background:#0a0710;color:#f4f0ff}
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui;background:transparent;color:#f4f0ff}
 *{box-sizing:border-box}
 body{margin:0;background:radial-gradient(circle at 15% 0,#3a1250 0,transparent 40%),radial-gradient(circle at 90% 10%,#4a0f3a 0,transparent 32%),#0a0710}
 main{max-width:1180px;margin:auto;padding:48px 24px}
@@ -38,11 +38,32 @@ body.overlay-mode{background:transparent}
 .overlay-page{min-height:100vh;padding:16px;display:flex;flex-direction:column;gap:10px}
 .overlay-topbar{display:flex;justify-content:space-between;align-items:center}
 .overlay-topbar a{color:#54d9ff;font-size:13px;text-decoration:none}
-.overlay-feed{display:flex;flex-direction:column-reverse;gap:8px;max-width:520px}
-.overlay-card{display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:12px;background:#141527ee;border:1px solid #343652;box-shadow:0 10px 30px #0007;animation:overlay-in .25s ease-out}
-.overlay-card.donation{border-color:#5a4a1f;background:#2a220bee}
+.overlay-feed{display:flex;flex-direction:column-reverse;gap:8px;width: 100%;}
+.overlay-feed.overlay-donation {
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    flex: 1;
+}
+.overlay-feed.chat-feed{flex:1 1 auto;min-height:0;flex-direction:column;overflow-y:auto;scrollbar-width:none}
+.overlay-feed.chat-feed::-webkit-scrollbar{display:none}
+.overlay-card{padding:11px 14px;border-radius:12px;background:#141527ee;border:1px solid #343652;box-shadow:0 10px 30px #0007;animation:overlay-in .25s ease-out; width: 100%;}
+.overlay-card .badge {
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+.overlay-card strong {padding-right: 8px;}
+.overlay-card.donation{border-color:transparent;background:transparent;text-align: center;}
 .overlay-alert-image{width:36px;height:36px;object-fit:contain}
 @keyframes overlay-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* 후원 알림 큐: 1초 등장 + TTS(또는 2초) 유지 + 1초 퇴장 */
+.overlay-card.donation.phase-enter{animation:overlay-donation-enter 1s ease-out forwards}
+.overlay-card.donation.phase-hold{animation:none;opacity:1;transform:translateY(0) scale(1)}
+.overlay-card.donation.phase-exit{animation:overlay-donation-exit 1s ease-in forwards}
+@keyframes overlay-donation-enter{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes overlay-donation-exit{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-16px) scale(.96)}}
 
 .overlay-game{display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px}
 .overlay-roulette{font-size:64px;transition:transform .2s}
