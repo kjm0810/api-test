@@ -652,8 +652,8 @@ public class SoopService {
         }
         void handle(WebSocket ws, String raw) {
             if (!raw.startsWith(STARTER) || raw.length() < 6) {
-                // 0121(미션) 관련 패킷이 STARTER 체크에서부터 걸러지는지 확인하기 위한 임시 진단 로그
-                if (raw.contains("0121") || raw.contains("CHALLENGE_GIFT") || raw.contains("\"type\":\"GIFT\""))
+                // 미션 JSON 바디의 정확한 키:값 패턴만 매칭 (단순 "0121" 부분일치는 일반 유저ID에도 흔해서 오탐 폭주함)
+                if (looksLikeMissionJson(raw))
                     log.info("SOOP STARTER 불일치 미션 의심 패킷: streamerId={}, len={}, raw={}",
                             streamerId, raw.length(), raw);
                 return;
@@ -663,8 +663,16 @@ public class SoopService {
             else if ("0005".equals(type)) chat(streamerId, raw);
             else if ("0018".equals(type) || "0105".equals(type) || "0087".equals(type)) donation(streamerId, type, raw);
             else if ("0121".equals(type)) mission(streamerId, raw);
-            else if (raw.contains("0121") || raw.contains("CHALLENGE_GIFT"))
+            else if (looksLikeMissionJson(raw))
                 log.info("SOOP 타입코드 불일치 미션 의심 패킷: streamerId={}, type={}, raw={}", streamerId, type, raw);
+        }
+
+        private boolean looksLikeMissionJson(String raw) {
+            return raw.contains("\"type\":\"CHALLENGE_GIFT\"") || raw.contains("\"type\":\"BATTLE_GIFT\"")
+                    || raw.contains("\"type\":\"GIFT\"") || raw.contains("\"type\":\"CHALLENGE_SETTLE\"")
+                    || raw.contains("\"type\":\"CHALLENGE_FINISH\"") || raw.contains("\"type\":\"SETTLE\"")
+                    || raw.contains("\"type\":\"FINISH\"") || raw.contains("\"type\":\"BATTLE_SETTLE\"")
+                    || raw.contains("\"type\":\"BATTLE_FINISH\"");
         }
         void ping() { if (socket != null && !socket.isOutputClosed()) socket.sendText(packet("0000", SEP), true); }
         void close() {
