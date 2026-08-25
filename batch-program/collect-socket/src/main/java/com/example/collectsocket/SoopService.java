@@ -497,32 +497,50 @@ public class SoopService {
             return;
         }
         try {
+            // 실측 페이로드 기준: message 래퍼 없이 최상위에 필드가 바로 있고, action이 아니라 type,
+            // count가 아니라 gift_count, userNickname이 아니라 user_nick. key가 미션 고유 식별자.
             var root = json.readTree(raw.substring(jsonStart));
-            String action = root.path("action").asText();
-            String phase = soopMissionPhase(action);
+            String type = root.path("type").asText();
+            String phase = soopMissionPhase(type);
             if (phase == null) {
-                log.info("SOOP 미션(0121) 알 수 없는 action: streamerId={}, action={}, body={}", streamerId, action, root);
+                log.info("SOOP 미션(0121) 알 수 없는 type: streamerId={}, type={}, body={}", streamerId, type, root);
                 return;
             }
-            var message = root.path("message");
-            String userId = message.path("userId").asText("");
-            String nickname = message.path("userNickname").asText("");
-            int cnt = message.path("count").asInt(0);
-            String title = message.path("title").asText("");
+            String missionKey = root.path("key").asText("");
+            String userId = root.path("user_id").asText("");
+            String nickname = root.path("user_nick").asText("");
+            int cnt = root.path("gift_count").asInt(0);
+            long amount = cnt * 100L;
+            String title = root.path("title").asText("");
             Instant receivedAt = Instant.now();
-            missionSaveQueue.offer(new MissionRow(UUID.randomUUID().toString(), "soop", streamerId, "",
-                    action, phase, title, userId, nickname, cnt, 0L,
-                    json.writeValueAsString(Map.of("soop", root)), receivedAt,
+            String eventId = UUID.randomUUID().toString();
+            Broadcast target = broadcasts.stream().filter(item -> item.userId().equals(streamerId)).findFirst().orElse(null);
+            String targetNickname = target == null ? streamerId : target.userNickname();
+            Map<String, Object> extras = Map.of("soop", root);
+            missionSaveQueue.offer(new MissionRow(eventId, "soop", streamerId, missionKey,
+                    type, phase, title, userId, nickname, cnt, amount,
+                    json.writeValueAsString(extras), receivedAt,
                     receivedAt.plus(365, ChronoUnit.DAYS)));
+            publishRealtime(Map.ofEntries(
+                    Map.entry("_id", eventId), Map.entry("type", "mission"), Map.entry("platform", "soop"),
+                    Map.entry("streamer_id", streamerId), Map.entry("streamer_nickname", targetNickname),
+                    Map.entry("user_id", userId), Map.entry("nickname", nickname),
+                    Map.entry("mission_type", type), Map.entry("mission_phase", phase),
+                    Map.entry("mission_key", missionKey), Map.entry("title", title),
+                    Map.entry("cnt", cnt), Map.entry("amount", amount),
+                    Map.entry("createdAt", receivedAt.toString()),
+                    Map.entry("ttl", receivedAt.plus(365, ChronoUnit.DAYS).toString()), Map.entry("__v", 0),
+                    Map.entry("extras", extras)));
         } catch (Exception ignored) {
         }
     }
 
-    private static String soopMissionPhase(String action) {
-        return switch (action) {
-            case "BATTLE_MISSION_GIFTED", "CHALLENGE_MISSION_GIFTED", "CHALLENGE_MISSION_SPONSORS" -> "receive";
-            case "BATTLE_MISSION_SETTLED", "CHALLENGE_MISSION_SETTLED" -> "settle";
-            case "BATTLE_MISSION_FINISHED", "CHALLENGE_MISSION_FINISHED" -> "result";
+    private static String soopMissionPhase(String type) {
+        return switch (type) {
+            // GIFT: 일반 미션(도전/대결 아님), CHALLENGE_GIFT: 도전미션, BATTLE_GIFT: 대결미션(추정)
+            case "GIFT", "CHALLENGE_GIFT", "BATTLE_GIFT" -> "receive";
+            case "SETTLE", "CHALLENGE_SETTLE", "BATTLE_SETTLE" -> "settle";
+            case "FINISH", "CHALLENGE_FINISH", "BATTLE_FINISH" -> "result";
             default -> null;
         };
     }
@@ -749,11 +767,25 @@ public class SoopService {
                                 ? extras.path("missionDonationId").asText("")
                                 : extras.path("relatedMissionDonationId").asText("");
                         String missionTitle = extras.path("missionText").asText("");
-                        missionSaveQueue.offer(new MissionRow(UUID.randomUUID().toString(), "chzzk",
-                                broadcast.channelId(), missionKey, donationType, "receive", missionTitle, userId, nickname,
-                                (int) Math.min(amount, Integer.MAX_VALUE), amount,
-                                json.writeValueAsString(Map.of("chzzk", extras)), receivedAt,
+                        // mission_type은 donationType이 아니라 status(PENDING/APPROVED). cnt는 금액과 무관하게 항상 1건.
+                        String missionStatus = extras.path("status").asText("");
+                        String missionEventId = UUID.randomUUID().toString();
+                        Map<String, Object> missionExtras = Map.of("chzzk", extras);
+                        missionSaveQueue.offer(new MissionRow(missionEventId, "chzzk",
+                                broadcast.channelId(), missionKey, missionStatus, "receive", missionTitle, userId, nickname,
+                                1, amount,
+                                json.writeValueAsString(missionExtras), receivedAt,
                                 receivedAt.plus(365, ChronoUnit.DAYS)));
+                        publishRealtime(Map.ofEntries(
+                                Map.entry("_id", missionEventId), Map.entry("type", "mission"), Map.entry("platform", "chzzk"),
+                                Map.entry("streamer_id", broadcast.channelId()), Map.entry("streamer_nickname", broadcast.channelName()),
+                                Map.entry("user_id", userId), Map.entry("nickname", nickname),
+                                Map.entry("mission_type", missionStatus), Map.entry("mission_phase", "receive"),
+                                Map.entry("mission_key", missionKey), Map.entry("title", missionTitle),
+                                Map.entry("cnt", 1), Map.entry("amount", amount),
+                                Map.entry("createdAt", receivedAt.toString()),
+                                Map.entry("ttl", receivedAt.plus(365, ChronoUnit.DAYS).toString()), Map.entry("__v", 0),
+                                Map.entry("extras", missionExtras)));
                         continue;
                     }
                     String from = nickname + (userId.isBlank() ? "" : "(" + userId + ")");

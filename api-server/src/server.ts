@@ -95,6 +95,12 @@ const eventSchema = z.discriminatedUnion("type", [
     type: z.literal("donation"), cnt: z.number().int().nonnegative(),
     amount: z.number().int().nonnegative(),
   }),
+  commonEventSchema.extend({
+    type: z.literal("mission"), cnt: z.number().int().nonnegative(),
+    amount: z.number().int().nonnegative(), mission_type: z.string(),
+    mission_phase: z.enum(["receive", "settle", "result"]),
+    mission_key: z.string().default(""), title: z.string().default(""),
+  }),
 ]);
 type StreamEvent = z.infer<typeof eventSchema>;
 
