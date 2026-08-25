@@ -651,12 +651,20 @@ public class SoopService {
             if (!intentionalClose) connectionFailed("soop", streamerId, "socket-error", error);
         }
         void handle(WebSocket ws, String raw) {
-            if (!raw.startsWith(STARTER) || raw.length() < 6) return;
+            if (!raw.startsWith(STARTER) || raw.length() < 6) {
+                // 0121(미션) 관련 패킷이 STARTER 체크에서부터 걸러지는지 확인하기 위한 임시 진단 로그
+                if (raw.contains("0121") || raw.contains("CHALLENGE_GIFT") || raw.contains("\"type\":\"GIFT\""))
+                    log.info("SOOP STARTER 불일치 미션 의심 패킷: streamerId={}, len={}, raw={}",
+                            streamerId, raw.length(), raw);
+                return;
+            }
             String type = raw.substring(2, 6);
             if ("0001".equals(type)) ws.sendText(packet("0002", SEP + chatNo + SEP.repeat(5)), true);
             else if ("0005".equals(type)) chat(streamerId, raw);
             else if ("0018".equals(type) || "0105".equals(type) || "0087".equals(type)) donation(streamerId, type, raw);
             else if ("0121".equals(type)) mission(streamerId, raw);
+            else if (raw.contains("0121") || raw.contains("CHALLENGE_GIFT"))
+                log.info("SOOP 타입코드 불일치 미션 의심 패킷: streamerId={}, type={}, raw={}", streamerId, type, raw);
         }
         void ping() { if (socket != null && !socket.isOutputClosed()) socket.sendText(packet("0000", SEP), true); }
         void close() {
