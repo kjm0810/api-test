@@ -50,6 +50,8 @@ public class SoopService {
     private static final Logger log = LoggerFactory.getLogger(SoopService.class);
     private static final String STARTER = "\u001B\t";
     private static final String SEP = "\f";
+    // 임시: SOOP 미션 미수집 원인 조사용 추적 대상 채널 (조사 끝나면 제거)
+    private static final Set<String> MISSION_TRACE_STREAMERS = Set.of("zzam2da", "kbs9981", "hhr001234");
     private final RestClient live = RestClient.create("https://live.sooplive.com");
     private final RestClient detail = RestClient.create("https://live.sooplive.co.kr");
     private final RestClient chzzk = RestClient.create("https://api.chzzk.naver.com");
@@ -651,6 +653,12 @@ public class SoopService {
             if (!intentionalClose) connectionFailed("soop", streamerId, "socket-error", error);
         }
         void handle(WebSocket ws, String raw) {
+            // 임시 추적: 특정 채널에서 실제로 어떤 타입 코드가 들어오는지 전부 확인 (미션 원인 조사용, 나중에 제거)
+            if (MISSION_TRACE_STREAMERS.contains(streamerId)) {
+                String preview = raw.length() > 80 ? raw.substring(0, 80) : raw;
+                log.info("SOOP TRACE: streamerId={}, startsWithStarter={}, len={}, preview={}",
+                        streamerId, raw.startsWith(STARTER), raw.length(), preview);
+            }
             if (!raw.startsWith(STARTER) || raw.length() < 6) {
                 // 미션 JSON 바디의 정확한 키:값 패턴만 매칭 (단순 "0121" 부분일치는 일반 유저ID에도 흔해서 오탐 폭주함)
                 if (looksLikeMissionJson(raw))
