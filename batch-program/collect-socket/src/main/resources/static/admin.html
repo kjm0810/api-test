@@ -8,8 +8,8 @@
     body{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;padding:40px}main{max-width:1100px;margin:auto}
     h1{margin-bottom:8px}.sub{color:#94a3b8;margin-bottom:28px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
     .card{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:20px}.label{color:#94a3b8;font-size:14px}.value{font-size:32px;font-weight:700;margin-top:10px}
-    .ok{color:#4ade80}.bad{color:#fb7185}.soop{color:#60a5fa}.chzzk{color:#4ade80}
-    .lists{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.list{margin-top:12px;max-height:480px;overflow:auto}.badge{display:inline-block;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;margin-right:7px}.badge-SOOP{background:#2563eb}.badge-CHZZK{background:#16a34a}
+    .ok{color:#4ade80}.bad{color:#fb7185}.soop{color:#60a5fa}.chzzk{color:#4ade80}.youtube{color:#f87171}
+    .lists{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px}.list{margin-top:12px;max-height:480px;overflow:auto}.badge{display:inline-block;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;margin-right:7px}.badge-SOOP{background:#2563eb}.badge-CHZZK{background:#16a34a}.badge-YOUTUBE{background:#dc2626}
     .row{padding:8px 0;border-bottom:1px solid #334155}small{color:#64748b}@media(max-width:700px){.lists{grid-template-columns:1fr}}
     footer{margin-top:24px;color:#64748b;font-size:13px}
   </style>
@@ -24,10 +24,13 @@
     <div class="card"><div class="label chzzk">치지직 WebSocket</div><div id="chzzkSockets" class="value chzzk">0</div></div>
     <div class="card"><div class="label">연결 실패</div><div id="failed" class="value bad">0</div></div>
     <div class="card"><div class="label">수집 후원 이벤트</div><div id="saved" class="value">0</div></div>
+    <div class="card"><div class="label youtube">유튜브 등록 채널</div><div id="youtubeRegistered" class="value">0</div></div>
+    <div class="card"><div class="label youtube">유튜브 연결</div><div id="youtubeActive" class="value youtube">0</div></div>
   </section>
   <section class="lists">
     <div class="card"><div class="label soop">SOOP 방송 목록</div><div id="soopList" class="list"></div></div>
     <div class="card"><div class="label chzzk">치지직 방송 목록</div><div id="chzzkList" class="list"></div></div>
+    <div class="card"><div class="label youtube">유튜브 채널 목록</div><div id="youtubeList" class="list"></div></div>
   </section>
   <section class="card" style="margin-top:16px"><div class="label">최근 후원 이벤트</div><div id="donationList" class="list">아직 없음</div></section>
   <section class="card" style="margin-top:16px"><div class="label bad">최근 연결 실패</div><div id="failureList" class="list">아직 없음</div></section>
@@ -40,6 +43,10 @@
   };
   const loadDonations=()=>fetch('/api/admin/donations').then(r=>r.json()).then(items=>donationList.innerHTML=items.length?items.map(x=>row(`<span class="badge badge-${x.platform}">${x.platform}</span>${new Date(x.receivedAt).toLocaleTimeString()} · ${x.from} → ${x.to}`,`· ${x.amount}${x.platform==='SOOP'?'개':'원'}`)).join(''):'아직 없음');
   const loadFailures=()=>fetch('/api/admin/connection-failures').then(r=>r.json()).then(items=>failureList.innerHTML=items.length?items.slice(0,100).map(x=>row(`<span class="badge badge-${x.platform.toUpperCase()}">${x.platform.toUpperCase()}</span>${new Date(x.occurredAt).toLocaleTimeString()} · ${x.targetId} · ${x.stage}`,`· ${x.reason} · ${x.attempts}회`)).join(''):'아직 없음');
+  const loadYoutube=()=>fetch('/api/admin/youtube/status').then(r=>r.json()).then(s=>{
+    youtubeRegistered.textContent=s.registeredChannels;youtubeActive.textContent=s.activeChannels;
+    youtubeList.innerHTML=s.channels.length?s.channels.map((x,i)=>row(`${i+1}. ${x}`,'')).join(''):'등록된 채널 없음';
+  });
   const render=s=>{
     soopBroadcasts.textContent=s.broadcasts;
     soopSockets.textContent=s.connectedSockets;
@@ -50,6 +57,7 @@
     loadLists();loadDonations();loadFailures();
   };
   fetch('/api/admin/status').then(r=>r.json()).then(render);
+  loadYoutube();setInterval(loadYoutube,5000);
   const source=new EventSource('/api/admin/events');
   source.addEventListener('status',e=>{live.textContent='연결됨';live.className='ok';render(JSON.parse(e.data))});
   source.onerror=()=>{live.textContent='재연결 중';live.className='bad'};

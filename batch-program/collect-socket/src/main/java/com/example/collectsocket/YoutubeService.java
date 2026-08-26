@@ -58,12 +58,19 @@ public class YoutubeService {
     private final ExecutorService pollWorkers = Executors.newCachedThreadPool();
     private final Set<String> activeChannels = ConcurrentHashMap.newKeySet();
     private volatile boolean shuttingDown;
+    private volatile int registeredChannelCount;
 
     public YoutubeService(ObjectMapper json, JdbcTemplate jdbc, StringRedisTemplate redis) {
         this.json = json;
         this.jdbc = jdbc;
         this.redis = redis;
     }
+
+    public Status status() {
+        return new Status(registeredChannelCount, activeChannels.size(), List.copyOf(activeChannels));
+    }
+
+    public record Status(int registeredChannels, int activeChannels, List<String> channels) {}
 
     // 등록된 채널 목록을 주기적으로 확인해서, 아직 폴링 시작 안 한 채널이 있으면 시작한다
     @Scheduled(initialDelay = 5_000, fixedDelay = 120_000)
@@ -79,6 +86,7 @@ public class YoutubeService {
             log.warn("유튜브 등록 채널 조회 실패: {}", rootMessage(error));
             return;
         }
+        registeredChannelCount = channelIds.size();
         for (String channelId : channelIds) {
             if (activeChannels.add(channelId)) {
                 pollWorkers.execute(() -> runChannel(channelId));

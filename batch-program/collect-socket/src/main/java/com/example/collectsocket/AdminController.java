@@ -12,8 +12,13 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RequestMapping("/api/admin")
 public class AdminController {
     private final SoopService soop;
-    public AdminController(SoopService soop) { this.soop = soop; }
+    private final YoutubeService youtube;
+    public AdminController(SoopService soop, YoutubeService youtube) {
+        this.soop = soop;
+        this.youtube = youtube;
+    }
     @GetMapping("/status") public SoopService.Status status() { return soop.status(); }
+    @GetMapping("/youtube/status") public YoutubeService.Status youtubeStatus() { return youtube.status(); }
     @GetMapping("/broadcasts") public List<SoopService.Broadcast> broadcasts() { return soop.broadcasts(); }
     @GetMapping("/chzzk/broadcasts") public List<SoopService.ChzzkBroadcast> chzzkBroadcasts() {
         return soop.chzzkBroadcasts();
