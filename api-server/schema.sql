@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
 CREATE TABLE IF NOT EXISTS streamer_links (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
-  platform ENUM('soop','chzzk') NOT NULL,
+  platform ENUM('soop','chzzk','youtube') NOT NULL,
   streamer_id VARCHAR(100) NOT NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_streamer_link (user_id, platform, streamer_id),
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS overlay_widgets (
 CREATE TABLE IF NOT EXISTS overlay_streamers (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
-  platform ENUM('soop','chzzk') NOT NULL,
+  platform ENUM('soop','chzzk','youtube') NOT NULL,
   streamer_id VARCHAR(100) NOT NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_overlay_streamer (user_id, platform, streamer_id),

@@ -51,7 +51,7 @@ public class SoopService {
     private static final String STARTER = "\u001B\t";
     private static final String SEP = "\f";
     // 임시: SOOP 미션 미수집 원인 조사용 추적 대상 채널 (조사 끝나면 제거)
-    private static final Set<String> MISSION_TRACE_STREAMERS = Set.of("zzam2da", "kbs9981", "hhr001234");
+    private static final Set<String> MISSION_TRACE_STREAMERS = Set.of("zzam2da", "kbs9981", "hhr001234", "yeyo25");
     private final RestClient live = RestClient.create("https://live.sooplive.com");
     private final RestClient detail = RestClient.create("https://live.sooplive.co.kr");
     private final RestClient chzzk = RestClient.create("https://api.chzzk.naver.com");

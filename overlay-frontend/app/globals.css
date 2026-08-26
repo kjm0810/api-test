@@ -25,6 +25,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .badge{font-size:10px;font-weight:900;padding:3px 7px;border-radius:6px}
 .badge.soop{background:#26245f;color:#a9a0ff}
 .badge.chzzk{background:#123e48;color:#65dcf4}
+.badge.youtube{background:#3a1414;color:#ff6b6b}
 .error{padding:12px 15px;border:1px solid #7b354c;background:#391b29;color:#ff9eb7;border-radius:12px;margin-bottom:18px}
 .header-actions{display:flex;align-items:center;gap:8px}
 .auth-page{min-height:100vh;display:grid;place-items:center}

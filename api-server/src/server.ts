@@ -37,7 +37,7 @@ app.use(express.json({ limit: "256kb" }));
 
 type AuthRequest = Request & { userId?: number };
 type ApiKeyRow = RowDataPacket & { user_id: number };
-type LinkRow = RowDataPacket & { platform: "soop" | "chzzk"; streamer_id: string };
+type LinkRow = RowDataPacket & { platform: "soop" | "chzzk" | "youtube"; streamer_id: string };
 type UserRow = RowDataPacket & { id: number; name: string; email: string; password_hash: string };
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -84,7 +84,7 @@ async function auth(req: AuthRequest, res: Response, next: NextFunction) {
 }
 
 const commonEventSchema = z.object({
-  _id: z.string(), platform: z.enum(["soop", "chzzk"]), streamer_id: z.string(),
+  _id: z.string(), platform: z.enum(["soop", "chzzk", "youtube"]), streamer_id: z.string(),
   streamer_nickname: z.string(),
   user_id: z.string().default(""), nickname: z.string().default(""), message: z.string().default(""),
   extras: z.unknown().default({}), createdAt: z.string(), ttl: z.string(), __v: z.number().int().default(0),
@@ -105,7 +105,7 @@ const eventSchema = z.discriminatedUnion("type", [
 type StreamEvent = z.infer<typeof eventSchema>;
 
 const overlaySubscribeSchema = z.array(z.object({
-  platform: z.enum(["soop", "chzzk"]), id: z.string().min(1).max(100),
+  platform: z.enum(["soop", "chzzk", "youtube"]), id: z.string().min(1).max(100),
 })).max(50);
 
 function publish(input: unknown) {
@@ -190,7 +190,7 @@ app.get("/api/v1/streamers", auth, async (req: AuthRequest, res) => {
 });
 
 app.post("/api/v1/streamers", auth, async (req: AuthRequest, res) => {
-  const input = z.object({ platform: z.enum(["soop", "chzzk"]), streamerId: z.string().min(1).max(100) }).parse(req.body);
+  const input = z.object({ platform: z.enum(["soop", "chzzk", "youtube"]), streamerId: z.string().min(1).max(100) }).parse(req.body);
   await pool.execute("INSERT IGNORE INTO streamer_links(user_id,platform,streamer_id) VALUES(?,?,?)",
     [req.userId!, input.platform, input.streamerId]);
   res.status(201).json(input);
@@ -243,7 +243,7 @@ app.get("/api/v1/overlay/streamers", auth, async (req: AuthRequest, res) => {
 });
 
 app.post("/api/v1/overlay/streamers", auth, async (req: AuthRequest, res) => {
-  const input = z.object({ platform: z.enum(["soop", "chzzk"]), streamerId: z.string().min(1).max(100) }).parse(req.body);
+  const input = z.object({ platform: z.enum(["soop", "chzzk", "youtube"]), streamerId: z.string().min(1).max(100) }).parse(req.body);
   await pool.execute("INSERT IGNORE INTO overlay_streamers(user_id,platform,streamer_id) VALUES(?,?,?)",
     [req.userId!, input.platform, input.streamerId]);
   res.status(201).json(input);
@@ -275,7 +275,7 @@ app.get("/donations/polling", auth, async (req: AuthRequest, res) => {
   const streamerId = typeof req.query.streamerId === "string" ? req.query.streamerId : null;
   if ((platform && !streamerId) || (!platform && streamerId))
     return res.status(400).json({ error: "platform과 streamerId는 함께 입력해야 합니다" });
-  if (platform && platform !== "soop" && platform !== "chzzk")
+  if (platform && platform !== "soop" && platform !== "chzzk" && platform !== "youtube")
     return res.status(400).json({ error: "invalid_platform" });
 
   const params: unknown[] = [];
@@ -305,7 +305,7 @@ app.get("/missions/polling", auth, async (req: AuthRequest, res) => {
   const phase = typeof req.query.phase === "string" ? req.query.phase : null;
   const missionKey = typeof req.query.key === "string" ? req.query.key : null;
 
-  if (platform && platform !== "soop" && platform !== "chzzk")
+  if (platform && platform !== "soop" && platform !== "chzzk" && platform !== "youtube")
     return res.status(400).json({ error: "invalid_platform" });
   if (phase && !["receive", "settle", "result"].includes(phase))
     return res.status(400).json({ error: "invalid_phase" });

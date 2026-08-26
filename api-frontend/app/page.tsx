@@ -8,7 +8,7 @@ import { decodeEvent } from "./lib/decode";
 import { API, useAuth } from "./lib/useAuth";
 import SocketGuide from "./socket-guide";
 
-type Platform = "soop" | "chzzk";
+type Platform = "soop" | "chzzk" | "youtube";
 type Streamer = { platform: Platform; streamer_id: string };
 type Donation = { _id?: string; id?: string; platform: Platform; streamer_id?: string; streamerId?: string; nickname: string; amount: number; message: string; created_at?: string; createdAt?: string };
 
@@ -69,7 +69,7 @@ export default function Home() {
         </header>
         <section className="panel key"><label>API KEY</label><input type="text" value={apiKey} onChange={(e) => updateApiKey(e.target.value)} placeholder="회원가입 때 발급된 API 키" /><button onClick={() => void copyToClipboard(apiKey)} disabled={!apiKey}>복사</button></section>
         {error && <div className="error">{error}</div>}
-        <section className="panel"><div className="title"><h2>연결 스트리머</h2><b>{streamers.length}</b></div><form onSubmit={addStreamer}><select value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}><option value="soop">SOOP</option><option value="chzzk">치지직</option></select><input value={streamerId} onChange={(e) => setStreamerId(e.target.value)} placeholder="스트리머 ID" required /><button>추가</button></form><div className="list">{streamers.map((item) => <div className="item" key={`${item.platform}:${item.streamer_id}`}><span className={`badge ${item.platform}`}>{item.platform.toUpperCase()}</span><code>{item.streamer_id}</code><button className="danger" onClick={() => removeStreamer(item)}>삭제</button></div>)}{!streamers.length && <p className="empty">연결된 스트리머가 없습니다.</p>}</div></section>
+        <section className="panel"><div className="title"><h2>연결 스트리머</h2><b>{streamers.length}</b></div><form onSubmit={addStreamer}><select value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}><option value="soop">SOOP</option><option value="chzzk">치지직</option><option value="youtube">YouTube</option></select><input value={streamerId} onChange={(e) => setStreamerId(e.target.value)} placeholder="스트리머 ID" required /><button>추가</button></form><div className="list">{streamers.map((item) => <div className="item" key={`${item.platform}:${item.streamer_id}`}><span className={`badge ${item.platform}`}>{item.platform.toUpperCase()}</span><code>{item.streamer_id}</code><button className="danger" onClick={() => removeStreamer(item)}>삭제</button></div>)}{!streamers.length && <p className="empty">연결된 스트리머가 없습니다.</p>}</div></section>
         <SocketGuide />
       </main>
     </AuthGate>

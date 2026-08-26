@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { decodeEvent } from "../../lib/decode";
 import { useOverlayJoin } from "../../lib/useOverlayJoin";
 
-type Platform = "soop" | "chzzk";
+type Platform = "soop" | "chzzk" | "youtube";
 type StreamEvent = { _id: string; platform: Platform; nickname: string; message: string };
 
 type ChatSettings = { maxMessages: number; fontSize: number };

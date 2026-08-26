@@ -5,13 +5,14 @@ import Link from "next/link";
 import AuthGate from "./components/AuthGate";
 import { useAuth } from "./lib/useAuth";
 
-type Platform = "soop" | "chzzk";
+type Platform = "soop" | "chzzk" | "youtube";
 type Streamer = { platform: Platform; streamer_id: string };
 
 const WIDGET_LINKS: { href: string; icon: string; title: string; description: string }[] = [
   { href: "/donation", icon: "💰", title: "후원 알림", description: "구간별 텍스트/이미지·TTS·폰트 크기 설정" },
   { href: "/chat", icon: "💬", title: "채팅", description: "실시간 채팅 표시 설정" },
   { href: "/game", icon: "🎮", title: "게임", description: "후원 계기 미니게임 설정 (룰렛)" },
+  { href: "/excel", icon: "엑셀", title: "엑셀", description: "엑셀용 오버레이" },
 ];
 
 export default function OverlaysPage() {
@@ -72,7 +73,7 @@ export default function OverlaysPage() {
           <p className="muted">연결 스트리머(streamer_links)와 무관하게, 오버레이 전용으로 따로 관리됩니다. 3개 위젯이 이 목록을 공용으로 씁니다.</p>
           <form onSubmit={addStreamer}>
             <select value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}>
-              <option value="soop">SOOP</option><option value="chzzk">치지직</option>
+              <option value="soop">SOOP</option><option value="chzzk">치지직</option><option value="youtube">YouTube</option>
             </select>
             <input value={streamerId} onChange={(e) => setStreamerId(e.target.value)} placeholder="스트리머 ID" required />
             <button>추가</button>
