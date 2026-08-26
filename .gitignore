@@ -3,6 +3,6 @@ target/
 dist/
 .next/
 .env
-ws-test/
 .claude/
+ws-test/
 sample-doc/
