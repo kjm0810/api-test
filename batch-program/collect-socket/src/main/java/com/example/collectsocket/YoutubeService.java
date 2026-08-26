@@ -113,13 +113,27 @@ public class YoutubeService {
 
     private String findLiveVideoId(String channelId) {
         try {
-            String body = get("https://www.youtube.com/channel/" + channelId + "/live");
-            Matcher matcher = VIDEO_ID_PATTERN.matcher(body);
+            // 핸들에 한글 등 비ASCII 문자가 들어올 수 있어 URI.create 대신 다중 인자 생성자로 안전하게 인코딩
+            URI uri = new URI("https", "www.youtube.com", "/" + liveUrlPath(channelId), null);
+            Matcher matcher = VIDEO_ID_PATTERN.matcher(get(uri));
             return matcher.find() ? matcher.group(1) : null;
         } catch (Exception error) {
             log.warn("유튜브 라이브 여부 확인 실패: channelId={}, reason={}", channelId, rootMessage(error));
             return null;
         }
+    }
+
+    // 등록값이 채널ID(UC...)든, @핸들이든, 전체 URL이든 전부 받아서 /live 경로로 정규화
+    private static String liveUrlPath(String streamerId) {
+        String value = streamerId.trim();
+        int at = value.indexOf("youtube.com/");
+        if (at >= 0) value = value.substring(at + "youtube.com/".length());
+        value = value.split("[?#]")[0];
+        while (value.endsWith("/")) value = value.substring(0, value.length() - 1);
+        if (value.startsWith("channel/")) return value + "/live";
+        if (value.startsWith("@")) return value + "/live";
+        if (value.startsWith("UC") && value.length() >= 20) return "channel/" + value + "/live";
+        return "@" + value + "/live";
     }
 
     private void pollLiveChat(String channelId, String videoId) throws InterruptedException {
@@ -279,7 +293,11 @@ public class YoutubeService {
     }
 
     private String get(String url) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        return get(URI.create(url));
+    }
+
+    private String get(URI uri) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(uri)
                 .header("User-Agent", USER_AGENT).timeout(Duration.ofSeconds(10)).GET().build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) throw new IllegalStateException("HTTP " + response.statusCode());
